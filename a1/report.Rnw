@@ -1,0 +1,145 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+<<read_library, cache=FALSE, echo=FALSE, message=FALSE>>=
+library(knitr)
+library(ggplot2)
+library(dplyr)
+options(warn=0)
+opts_chunk$set(fig.width=5, fig.height=3, fig.pos='h!', fig.align='center', echo=FALSE, message=FALSE)
+@
+
+\title{STAT215A - Redwood Data Lab}
+\author{Timothy Meyers}
+\maketitle
+
+<<import_data, cache=FALSE, echo=FALSE>>=
+setwd('/Users/timothymeyers/Projects/stats/lab1/data')
+log <- read.csv('sonoma-data-log.csv',header=T)
+net <- read.csv('sonoma-data-net.csv',header=T)
+all <- read.csv('sonoma-data-all.csv', header=T)
+locs <- read.table('mote-location-data.txt')
+@
+
+Exploration of Data
+
+Please read the paper to understand how the sensor works, and write a paragraph to discuss the measurement of each variable you 􏰃nd interesting in the data. Please have at least 3 variables in your report, and those variables should be related to your 􏰃ndings in 1.3.
+
+1) Variables
+
+The data is measured from a series of sensors which collect temperature, humidity, and luminosity readings.  The Sensirion SHT11 is a digital sensor that records both temperature and humidity.  The measurement error for each of these variables is ± 0.5◦C and ± 3.5 percent, respectively.  Humidity is greater than zero, but can be greater than 100 percent in foggy conditions. Temperature readings, even if they are within normal ranges, can deviate significantly from historical values depending on the sensor's battery.  Voltage is recorded and provides an indication of the reliability of temperature recordings, and it's advised to focus only on temperature readings generated from a sensor with voltage between 2.4 and 3.  Luminosity is recorded as Photosynthetically active radiation (PAR), and both incident (direct) and reflected (ambient) PAR are recorded.  These measurements are collected by two Mamamatsu S1087 photodiodes, and are referred to as hamatop and hamabot in the data.  The units of measurement are unclear.
+
+2) Data Cleaning
+
+Bearing the data quality in mind, your second task will be data cleaning. This data set is quite raw - it contains some gross outliers, inconsistencies, and lots of missing values. Read the 􏰅Outlier rejection􏰆 section in the paper carefully and critically. You will need to do some cleaning of the data but don't blindly follow their method. Record in your report the steps you take and any evidence you use to support them.
+
+After loading the data and making a few plots, I saw that some rows had values missing.  Also, looking at the plots helped me understand the ranges where values were expected to lie, allowing me to remove obvious outliers.
+
+<<remove_na, cache=FALSE, echo=FALSE>>=
+log <- log[!is.na(log$humidity), ]
+log <- log[!is.na(log$humid_temp), ]
+log <- log[!is.na(log$humid_adj), ]
+log <- log[!is.na(log$voltage), ]
+log <- log[!is.na(log$hamatop), ]
+log <- log[!is.na(log$hamabot), ]
+net <- net[!is.na(net$humidity), ]
+net <- net[!is.na(net$humid_temp), ]
+net <- net[!is.na(net$humid_adj), ]
+net <- net[!is.na(net$voltage), ]
+net <- net[!is.na(net$hamatop), ]
+net <- net[!is.na(net$hamabot), ]
+@
+
+\ref{fig:plot_raw_humid_temp}.
+
+<<plot_raw_humid_temp, fig.cap="Observe expected range for humidity and humidtemp">>=
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + geom_point(aes(x=humidity, y=humid_temp))
+@
+
+\ref{fig:plot_cleansed_humid_temp}.
+<<plot_cleansed_humid_temp, fig.cap="Remove empty values and outliers (humidtemp and humidity)">>=
+log = log[log$humidity < 110, ]
+log = log[log$humidity > 0, ]
+log = log[log$humid_temp < 40, ]
+log = log[log$humid_temp > 0, ]
+net = net[net$humidity < 110, ]
+net = net[net$humidity > 0, ]
+net = net[net$humid_temp < 40, ]
+net = net[net$humid_temp > 0, ]
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + geom_point(aes(x=humidity, y=humid_temp))
+@
+
+\ref{fig:plot_raw_hama}.
+<<plot_raw_hama, fig.cap="Observe expected range for hamatop and hamabot">>=
+ggplot(log[log.indices, ]) + geom_point(aes(x=hamatop, y=hamabot))
+@
+
+\ref{fig:plot_cleansed_hama}.
+<<plot_cleansed_hama, fig.cap="Remove empty values and outliers (Hamatop and Hamabot)">>=
+log = log[log$hamatop < 150000, ]
+log = log[log$hamabot < 7500, ]
+net = net[net$hamatop < 150000, ]
+net = net[net$hamabot < 7500, ]
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + geom_point(aes(x=hamatop, y=hamabot))
+@
+
+\ref{fig:plot_raw_voltage_humidity}
+<<plot_raw_voltage_humidity, fig.cap="Observe expected range for voltage and humidity">>=
+ggplot(log[log.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+@
+
+\ref{fig:plot_cleansed_voltage_humidity}
+<<plot_cleansed_voltage_humidity, fig.cap="Remove empty values and outliers (voltage)">>=
+log = log[log$voltage > 2.4, ]
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+@
+
+After applying basic data cleansing to the net and log data, I ran humidity and temperature versus epoch on the net data and found that there were quite a few outliers in the temperature measurements.  These became more apparent when plotting against voltage, and I decided that 240 was the appropriate voltage cutoff to remove these outliers.
+
+\ref{fig:plot_raw_net_epoch_humidity}
+
+<<plot_raw_net_epoch_humidity, fig.cap="Observe humidity over time">>=
+net.indices <- sample(nrow(net), 10000, replace=F)
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humidity))
+@
+
+\ref{fig:plot_raw_net_epoch_humid_temperature}
+<<plot_raw_net_epoch_humid_temperature, fig.cap="Observe temperature over time">>=
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humid_temp))
+@
+
+\ref{fig:plot_raw_net_voltage_temperature}
+<<plot_raw_net_voltage_temperature, fig.cap="Observe temperature over voltage">>=
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+@
+
+\ref{fig:plot_cleansed_net_voltage_temperature}
+<<plot_cleansed_net_voltage_temperature, fig.cap="Remove voltage outliers">>=
+net = net[net$voltage < 240, ]
+net.indices <- sample(nrow(net), 10000, replace=F)
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+@
+
+\ref{fig:plot_cleansed_net_epoch_temperature}
+<<plot_cleansed_net_epoch_temperature, fig.cap="Cleansed temperature over time">>=
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humid_temp))
+@
+
+\ref{fig:plot_cleansed_net_epoch_humidity}
+<<plot_cleansed_net_epoch_humidity, fig.cap="Cleansed humidity over time">>=
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humidity))
+@
+
+
+With sensible values, we can now anaylze whether these values make sense over time.  Several plots can reveal pattern outliers.
+
+
+
+\end{document}

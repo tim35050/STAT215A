@@ -1,0 +1,72 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+% See excellent documentation at:
+% http://yihui.name/knitr/
+% http://yihui.name/knitr/demo/minimal/
+% http://yihui.name/knitr/options
+% ...as well as the manual knitr-manual.pdf, saved in this directory.
+
+<<read_library, cache=FALSE, echo=FALSE, message=FALSE>>=
+library(knitr)
+library(ggplot2)
+library(dplyr)
+options(warn=0)
+
+source("normal_point_mixture_lib.R")
+source("kernel_density_lib_0.R")
+opts_chunk$set(fig.width=5, fig.height=3, fig.pos='h!', fig.align='center', echo=FALSE, message=FALSE)
+@
+
+<<generate_data, cache=FALSE, echo=FALSE>>=
+n <- 5e3
+x <- seq(-3, 3, length.out=3000)
+p.1  <- rep(0.5, 2)
+means.1 <- c(-1, 1)
+sds.1 <- rep(0.4, 2)
+data1 <- NormalPointMixtureDraws(n, p=p.1, means=means.1, sds=sds.1)
+pdf1 <- NormalPointMixtureDensity(x=x, p=p.1, mean=means.1, sds=sds.1)
+@
+
+\title{Kernel Density Estimators}
+\author{Timothy Meyers}
+\maketitle
+
+We will be exploring the performance of kernel estimators on the distribution shown in figure \ref{fig:plot_raw_data}.
+
+<<plot_raw_data, fig.cap="Raw data from a point mixture of normals">>=
+ggplot() +
+  geom_histogram(aes(x=data1, y=..density..), fill=NA, color="blue") +
+  geom_line(aes(x=x, y=pdf1), lwd=2)
+@
+
+For all tasks, include a little text in this document about what you are doing.  When you're done, you'll have an R library and knitted pdf document.
+
+TASK 1: Complete the Kernel function and plot it.
+
+\ref{fig:plot_kernel}.
+<<plot_kernel, fig.cap="Plotting the Kernel for a bunch of random points">>=
+ggplot() +
+  geom_line(aes(x=x, y=Kernel(x, 2)), lwd=2)
+@
+
+TASK 2: Complete the EstimateDensity function and try fitting it to your data with some different bandwidhts.
+
+\ref{fig:plot_kernel_density}.
+<<plot_kernel_density, fig.cap="Plotting the Kernel Density for a bunch of random points">>=
+ggplot() +
+  geom_line(aes(x=x, y=EstimateDensity(x, Kernel, 2)), lwd=2)
+@
+
+TASK 3: Complete the PerformSimulations function and make plots of the bias and variance.
+
+TASK 4: Explore how the bias and variance changes as a function of the bandwidth.
+
+
+
+
+
+\end{document}

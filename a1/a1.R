@@ -1,0 +1,250 @@
+#
+# STAT215A
+# Lab 1 - Redwood Data Lab
+# Timothy Meyers
+#
+
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+
+# Turn off my usual default of warnings as error.
+options(warn=0)
+
+# 1.1 - Exploration of Data
+
+# Load the data.
+setwd('/Users/timothymeyers/Projects/stats/lab1/data')
+log <- read.csv('sonoma-data-log.csv',header=T)
+net <- read.csv('sonoma-data-net.csv',header=T)
+all <- read.csv('sonoma-data-all.csv', header=T)
+locs <- read.table('mote-location-data.txt', header=TRUE)
+
+# Inspect columns and data types, remove rows with empty
+# column values
+
+head(log)
+log <- log[!is.na(log$humidity), ]
+log <- log[!is.na(log$humid_temp), ]
+log <- log[!is.na(log$humid_adj), ]
+log <- log[!is.na(log$voltage), ]
+log <- log[!is.na(log$hamatop), ]
+log <- log[!is.na(log$hamabot), ]
+log <- log[!is.na(log$epoch), ]
+log <- log[!is.na(log$nodeid), ]
+
+head(net)
+net <- net[!is.na(net$humidity), ]
+net <- net[!is.na(net$humid_temp), ]
+net <- net[!is.na(net$humid_adj), ]
+net <- net[!is.na(net$voltage), ]
+net <- net[!is.na(net$hamatop), ]
+net <- net[!is.na(net$hamabot), ]
+net <- net[!is.na(net$epoch), ]
+net <- net[!is.na(net$nodeid), ]
+
+head(all)
+all <- all[!is.na(all$humidity), ]
+all <- all[!is.na(all$humid_temp), ]
+all <- all[!is.na(all$humid_adj), ]
+all <- all[!is.na(all$voltage), ]
+all <- all[!is.na(all$hamatop), ]
+all <- all[!is.na(all$hamabot), ]
+all <- all[!is.na(all$epoch), ]
+all <- all[!is.na(all$nodeid), ]
+
+head(locs)
+locs <- locs[!is.na(locs$ID), ]
+locs <- locs[!is.na(locs$Height), ]
+locs <- locs[!is.na(locs$Direc), ]
+locs <- locs[!is.na(locs$Dist), ]
+locs <- locs[!is.na(locs$Tree), ]
+
+# Make a few scatter plots to explore the data.
+# Start with log
+
+# First look at humidity vs temperature.
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + 
+  geom_point(aes(x=humidity, y=humid_temp))
+
+# Define outliers based on typical range observed
+log = log[log$humidity < 110, ]
+log = log[log$humidity > 0, ]
+log = log[log$humid_temp < 40, ]
+log = log[log$humid_temp > 0, ]
+net = net[net$humidity < 110, ]
+net = net[net$humidity > 0, ]
+net = net[net$humid_temp < 40, ]
+net = net[net$humid_temp > 0, ]
+all = all[all$humidity < 110, ]
+all = all[all$humidity > 0, ]
+all = all[all$humid_temp < 40, ]
+all = all[all$humid_temp > 0, ]
+
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + 
+  geom_point(aes(x=humidity, y=humid_temp))
+
+# hamatop vs hamabot
+ggplot(log[log.indices, ]) + 
+  geom_point(aes(x=hamatop, y=hamabot))
+
+# hamatop vs temperature, humidity as color.
+ggplot(log[log.indices, ]) + 
+  geom_point(aes(x=hamatop, y=humid_temp, color=humidity))
+
+# Remove hamatop and hamabot outliers
+log = log[log$hamatop < 150000, ]
+log = log[log$hamabot < 7500, ]
+net = net[net$hamatop < 150000, ]
+net = net[net$hamabot < 7500, ]
+all = all[all$hamatop < 150000, ]
+all = all[all$hamabot < 7500, ]
+log.indices <- sample(nrow(log), 10000, replace=F)
+net.indices <- sample(nrow(net), 10000, replace=F)
+ggplot(log[log.indices, ]) + 
+  geom_point(aes(x=hamatop, y=hamabot))
+
+# Check values over time
+net.indices <- sample(nrow(net), 10000, replace=F)
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humidity))
+ggplot(net[net.indices, ]) + geom_point(aes(x=epoch, y=humid_temp))
+# Notice outliers, confirm hypothesis in paper about battery problems
+# by observing voltage outliers.
+
+# Observe expected range of voltage and remove outliers
+ggplot(log[log.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+ggplot(log[log.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+log = log[log$voltage > 2.4, ]
+log.indices <- sample(nrow(log), 10000, replace=F)
+ggplot(log[log.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+
+# do the same for net
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+net = net[net$voltage < 240, ]
+net.indices <- sample(nrow(net), 10000, replace=F)
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+ggplot(net[net.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+
+# do the same for all
+ggplot(all[all.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+ggplot(all[all.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+all = all[all$voltage < 240, ]
+all = all[all$voltage > 200, ]
+all.indices <- sample(nrow(all), 10000, replace=F)
+ggplot(all[all.indices, ]) + geom_point(aes(x=voltage, y=humidity))
+ggplot(all[all.indices, ]) + geom_point(aes(x=voltage, y=humid_temp))
+
+# Let's analyze temperature variability by node position (interior 
+# vs edge) across height.
+names(locs)[1] <- "nodeid"
+if (sum(!is.numeric(log$nodeid)) != 0) {
+  stop("net nodeid must be numeric")
+}
+if (sum(!is.numeric(locs$nodeid)) != 0) {
+  stop("locs.edge nodeid must be numeric")
+}
+
+# join the two data frames
+log.locs <- inner_join(log, locs, by=c("nodeid"))
+edge.subset <- filter(log.locs, 
+                      epoch > 1000 & epoch < 1500 & Tree == "edge")
+# plot humidity at the edge
+ggplot(edge.subset) + 
+  geom_line(aes(x=epoch, y=humidity, group=nodeid, color=Height))
+# plot temperature at the edge
+ggplot(edge.subset) + 
+  geom_line(aes(x=epoch, y=humid_temp, group=nodeid, color=Height))
+# plot hamatop at the edge
+ggplot(edge.subset) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height))
+# plot hamabot at the edge
+ggplot(edge.subset) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height))
+
+interior.subset <- filter(log.locs, 
+                          epoch > 1000 & epoch < 1500 & Tree == "interior")
+# plot humidity at the interior
+ggplot(interior.subset) + 
+  geom_line(aes(x=epoch, y=humidity, group=nodeid, color=Height))
+# plot temperature at the interior
+ggplot(interior.subset) + 
+  geom_line(aes(x=epoch, y=humid_temp, group=nodeid, color=Height))
+# plot hamatop at the interior
+ggplot(interior.subset) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height))
+# plot hamabot at the interior
+ggplot(interior.subset) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height))
+
+# let's now take a look at how the direction of the mote affects PAR
+# take one day of data
+log.subset <- filter(log.locs, epoch > 750 & epoch < 880)
+ggplot(filter(log.subset, log.subset$Direc == 'E' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("East Incident PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'W' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("West Incident PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'S' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("South Incident PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'SW' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("South West Incident PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'NW' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("North West Incident PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'NE' )) + 
+  geom_line(aes(x=epoch, y=hamatop, group=nodeid, color=Height)) + 
+  ggtitle("North East Incident PAR")
+
+ggplot(filter(log.subset, log.subset$Direc == 'E' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("East Reflected PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'W' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("West Reflected PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'S' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("South Reflected PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'NW' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("North West Reflected PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'NE' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("North East Reflected PAR")
+ggplot(filter(log.subset, log.subset$Direc == 'SW' )) + 
+  geom_line(aes(x=epoch, y=hamabot, group=nodeid, color=Height)) + 
+  ggtitle("South West Reflected PAR")
+
+# 1.3 - Presenting Findings
+
+# epoch 1: Tue Apr 27 17:10:00 2004
+
+# let's show temperature variability in a day
+start.epoch <- 1523
+end.epoch <- 1811
+log.day <- filter(log.locs, epoch > start.epoch & epoch < end.epoch)
+
+epochs <- seq(start.epoch, end.epoch)
+time.string <- seq(end.epoch - start.epoch, from = 0) * 5
+time.string <- paste(time.string%/%60, ":", time.string%%60)
+time.string <- gsub(" ", "", time.string)
+time.string <- strptime(time.string, format="%H:%M")
+log.day$time <- time.string[log.day$epoch - start.epoch + 1]
+
+ggplot(log.day) + 
+  geom_line(aes(x=time, y=humid_temp, group=nodeid, color=Height)) + 
+  ggtitle("South West Node Temperatures, May 2nd, 2004.") +
+  xlab("Time of Day") +
+  ylab("Temperature (◦C)")
+
+ggplot(log.day) + 
+  geom_line(aes(x=time, y=humidity, group=nodeid, color=Height)) + 
+  ggtitle("South West Node Relative Humidity , May 2nd, 2004.") +
+  xlab("Time of Day") +
+  ylab("Temperature (◦C)")
+
